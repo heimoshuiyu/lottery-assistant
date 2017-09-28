@@ -1,1 +1,1 @@
-°à¼¶³éÇ©Èí¼ş
+chouqian For python tkinter random
