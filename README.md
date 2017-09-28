@@ -1,1 +1,1 @@
-chouqian For python tkinter random
+基于python tkinter random time 写的班级抽签助手
