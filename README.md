@@ -1,1 +1,1 @@
-基于python tkinter random time 写的班级抽签助手
+Python
