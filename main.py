@@ -15,6 +15,11 @@ class Counter():
         for i in self.counter:
             if not i:
                 return False
+        for i in self.counter:
+            try:
+                tmp = int(i)
+            except:
+                return False
         data = ''
         for i in range(len(self.counter)):
             data += self.counter.pop(0)
@@ -26,11 +31,15 @@ def main():
     global name
     global status
     root = tkinter.Tk()
-    frame=tkinter.Frame(root,width=200,height=200,background='green')
+    root.title('抽签助手')
+    root.maxsize(600, 400)  
+    root.minsize(300, 240)
+    frame=tkinter.Frame(root,width=300,height=240,background='green')
     name = tkinter.StringVar()
-    nameLabel = tkinter.Label(frame, textvariable = name)
+    nameLabel = tkinter.Label(frame,textvariable=name,width=10,height=4)
+    nameLabel.config(font = 'Helvetica -78 bold')
     status = tkinter.StringVar()
-    clickButton = tkinter.Button(frame, textvariable = status, command = startorstop)
+    clickButton = tkinter.Button(frame,textvariable=status,command=startorstop)
     name.set('准备开始')
     status.set('开始抽取')
     frame.bind("<Any-KeyPress>",callBack)
