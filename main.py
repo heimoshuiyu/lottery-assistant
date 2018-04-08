@@ -1,13 +1,65 @@
-import random, time, tkinter, threading
+import random
+import time
+import tkinter
+import threading
+import json
+import hashlib
+import dbm
+
 now = False
 sleep = 0.01
+
+class Database():
+    def __init__(self, namelist):
+        md5 = hashlib.md5()
+        md5data = json.dumps(namelist)
+        md5.update(md5data.encode('utf-8'))
+        self.namehash = md5.hexdigest()
+        self.database = dbm.open('database-%s'%self.namehash, 'c')
+        for name in namelist:
+            if not self.database.get(name):
+                self.database[name] = str(0)
+    def get(self, maxrange):
+        min = self.getminnum()
+        max = min + maxrange
+        resultnamelist = self.getrangedict(min, max)
+        randomindex = random.randint(0, len(resultnamelist) - 1)
+        self.count(resultnamelist[randomindex])
+        return resultnamelist[randomindex]
+    def getminnum(self):
+        first = True
+        for name in self.database:
+            index = self.database[name]
+            index = int(index)
+            if first:
+                min = index
+                first = False
+                continue
+            if index < min:
+                min = index
+        return min
+    def getrangedict(self, min, max):
+        resultnamelist = []
+        for name in self.database:
+            index = self.database[name]
+            index = int(index)
+            if index >= min and index <= max:
+                resultnamelist.append(name.decode('utf-8'))
+        return resultnamelist
+    def count(self, name):
+        name = name.encode('utf-8')
+        before = self.database[name]
+        now = int(before) + 1
+        now = str(now)
+        self.database[name] = now
+
+
 
 class Counter():
     def __init__(self, num):
         self.counter = list()
         for i in range(num):
             self.counter.append(False)
-        print(self.counter)
     def putin(self, data):
         tmp = self.counter.pop(0)
         self.counter.append(data)
@@ -25,34 +77,56 @@ class Counter():
             data += self.counter.pop(0)
             self.counter.append(False)
         return data
-counter = Counter(2)
 
 def main():
-    global name
-    global status
+    global name, status, tipsString, jsondata, root, qianzhi
     root = tkinter.Tk()
     root.title('抽签助手')
-    root.maxsize(600, 400)  
-    root.minsize(300, 240)
-    frame=tkinter.Frame(root,width=300,height=240,background='green')
+    #root.maxsize(600, 400)    #窗口大小
+    #root.minsize(300, 240)
+    #frame=tkinter.Frame(root,width=300,height=240,background='green')  #容器
+    frame = tkinter.Frame(root, width=300, height=240)
     name = tkinter.StringVar()
     nameLabel = tkinter.Label(frame,textvariable=name,width=10,height=4)
-    nameLabel.config(font = 'Helvetica -78 bold')
+    #nameLabel.config(font = 'Helvetica -78 bold')
+    nameLabel.config(font = '微软雅黑 -78 bold')
     status = tkinter.StringVar()
     clickButton = tkinter.Button(frame,textvariable=status,command=startorstop)
     name.set('准备开始')
     status.set('开始抽取')
     frame.bind("<Any-KeyPress>",callBack)
-    nameLabel.pack()
-    clickButton.pack()
-    frame.pack()
+    nameLabel.grid(column = 0, row = 0, columnspan = 2)
+    clickButton.grid(column = 0, row = 1)
+    tipsString = tkinter.StringVar()
+    tipsLabel = tkinter.Label(frame, textvariable = tipsString)
+    tipsString.set('名单列表里共有%s个名字，没有重复'%len(namelist))
+    tipsLabel.grid(column = 0, row = 2)
+    qianzhi = tkinter.IntVar()
+    check1 = tkinter.Checkbutton(frame, text = '窗口前置', variable=qianzhi)
+    check1.grid(column = 1, row = 2)
+    frame.grid(column = 0, row = 0)
     frame.focus_set()
     root.mainloop()
-    
+
+def readjson():
+    with open('config.json', 'rb') as f:
+        data = f.read().decode('utf-8')
+        jsondata = json.loads(data)
+        return jsondata
+
+def writejson(jsondata):
+    jsondata = str(jsondata)
+    with open('config.json', 'w') as f:
+        f.write(jsondata)
+
+def check_forever():
+    while True:
+        time.sleep(0.01)
+        print(qianzhi.get())
+
 def callBack(event):
     global counter
     counter.putin(event.keysym)
-
 
 def startorstop():
     global now
@@ -65,16 +139,27 @@ def startorstop():
         status.set('点击开始')
 
 def realchouqian():
-    global counter
+    global counter, database
+    maxrange = jsondata['range'] - 1
+    resultname = database.get(maxrange)
+    name.set(resultname)
     num = counter.getout()
     if num:
         name.set(namelist[int(num)-1])
 
+sum = 1
+y = 0
 def chouqian():
-    global now
+    global now, tipsString, namelist, sum, y, jsondata
     while now:
-        name.set(namelist[random.randint(0,len(namelist)-1)])
-        time.sleep(sleep)
+        randnum = random.randint(0,len(namelist)-1)
+        sum += 1
+        if randnum == 0:
+            y += 1
+        name.set(namelist[randnum])
+        #tipsString.set('每人被抽到的理论概率为%s，实际概率为%s'%(round(1/len(namelist)*100,5), round((y/sum)*100,4)))
+        tipsString.set('抽签助手Ver1.3 内置数据库记录 打死都不会重复的版本')
+        time.sleep(jsondata['sleep'])
     realchouqian()
     
 
@@ -83,9 +168,12 @@ def readnamelist():
     with open('名单.txt', 'r') as f:
         for line in f:
             line = line.replace('\n','')
-            namelist.append(line)
+            if line:
+                namelist.append(line)
     return namelist
 
 namelist = readnamelist()
-print(len(namelist))
+database = Database(namelist)
+jsondata = readjson()
+counter = Counter(len(str(len(namelist))))
 main()
