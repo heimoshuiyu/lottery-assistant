@@ -5,7 +5,10 @@ import threading
 import json
 import hashlib
 import dbm
-import playsound
+try:
+    import playsound
+except:
+    pass
 import winsound
 
 
