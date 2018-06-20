@@ -5,6 +5,10 @@ import threading
 import json
 import hashlib
 import dbm
+import playsound
+import winsound
+
+
 
 now = False
 sleep = 0.01
@@ -24,7 +28,8 @@ class Database():
         max = min + maxrange
         resultnamelist = self.getrangedict(min, max)
         randomindex = random.randint(0, len(resultnamelist) - 1)
-        self.count(resultnamelist[randomindex])
+        if qianzhi.get() == 1:
+            self.count(resultnamelist[randomindex])
         return resultnamelist[randomindex]
     def getminnum(self):
         first = True
@@ -45,6 +50,7 @@ class Database():
             index = int(index)
             if index >= min and index <= max:
                 resultnamelist.append(name.decode('utf-8'))
+        print(resultnamelist)
         return resultnamelist
     def count(self, name):
         name = name.encode('utf-8')
@@ -78,8 +84,17 @@ class Counter():
             self.counter.append(False)
         return data
 
+def show_setting():
+    setting_window = tkinter.Tk()
+    sleep_time_label = tkinter.Label(setting_window, text='间隔时间（毫秒）')
+    sleep_time_label.grid(column=0, row=0)
+    sleep_time = tkinter.StringVar()
+    sleep_time_entry = tkinter.Entry(setting_window, textvariable=sleep_time)
+    setting_window.mainloop()
+
+
 def main():
-    global name, status, tipsString, jsondata, root, qianzhi
+    global name, status, tipsString, jsondata, root, qianzhi, root
     root = tkinter.Tk()
     root.title('抽签助手')
     #root.maxsize(600, 400)    #窗口大小
@@ -95,14 +110,17 @@ def main():
     name.set('准备开始')
     status.set('开始抽取')
     frame.bind("<Any-KeyPress>",callBack)
-    nameLabel.grid(column = 0, row = 0, columnspan = 2)
-    clickButton.grid(column = 0, row = 1)
+    nameLabel.grid(column = 0, row = 0, columnspan = 3)
+    clickButton.grid(column = 0, row = 1, columnspan=3)
     tipsString = tkinter.StringVar()
     tipsLabel = tkinter.Label(frame, textvariable = tipsString)
     tipsString.set('名单列表里共有%s个名字，没有重复'%len(namelist))
     tipsLabel.grid(column = 0, row = 2)
     qianzhi = tkinter.IntVar()
-    check1 = tkinter.Checkbutton(frame, text = '窗口前置', variable=qianzhi)
+    check1 = tkinter.Checkbutton(frame, text = '无重复模式', variable=qianzhi)
+    qianzhi.set(1)
+    setButton = tkinter.Button(frame, text = '设置', command=show_setting)
+    setButton.grid(column = 2, row = 2)
     check1.grid(column = 1, row = 2)
     frame.grid(column = 0, row = 0)
     frame.focus_set()
@@ -139,10 +157,11 @@ def startorstop():
         status.set('点击开始')
 
 def realchouqian():
-    global counter, database
-    maxrange = jsondata['range'] - 1
-    resultname = database.get(maxrange)
-    name.set(resultname)
+    global counter, database, qianzhi
+    if qianzhi.get() == 1:
+        maxrange = jsondata['range'] - 1
+        resultname = database.get(maxrange)
+        name.set(resultname)
     num = counter.getout()
     if num:
         name.set(namelist[int(num)-1])
@@ -158,7 +177,7 @@ def chouqian():
             y += 1
         name.set(namelist[randnum])
         #tipsString.set('每人被抽到的理论概率为%s，实际概率为%s'%(round(1/len(namelist)*100,5), round((y/sum)*100,4)))
-        tipsString.set('抽签助手Ver1.3 内置数据库记录 打死都不会重复的版本')
+        tipsString.set('抽签助手Ver1.4 内置数据库记录 打死都不会重复的版本')
         time.sleep(jsondata['sleep'])
     realchouqian()
     
@@ -175,5 +194,9 @@ def readnamelist():
 namelist = readnamelist()
 database = Database(namelist)
 jsondata = readjson()
+def playmp3():
+    print(jsondata['mp3file'])
+    playsound.playsound(jsondata['mp3file'])
+threading.Thread(target = playmp3, args = (),daemon = True).start()
 counter = Counter(len(str(len(namelist))))
 main()
