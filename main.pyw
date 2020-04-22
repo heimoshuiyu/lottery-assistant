@@ -13,12 +13,6 @@ import threading
 import json
 import hashlib
 import dbm
-import winsound
-
-try:
-    import playsound
-except:
-    pass
 
 
 now = False
@@ -212,9 +206,5 @@ def readnamelist(): # 读取名单，按行分割，返回列表
 namelist = readnamelist()
 database = Database(namelist)
 jsondata = readjson()
-def playmp3():  # 背景音乐（未完善）
-    print(jsondata['mp3file'])
-    playsound.playsound(jsondata['mp3file'])
-threading.Thread(target = playmp3, args = (),daemon = True).start()
 counter = Counter(len(str(len(namelist))))
 main()  # 执行主函数
