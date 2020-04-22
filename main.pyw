@@ -146,6 +146,8 @@ def show_setting():  # 想弄个设置窗口，太麻烦算了 ###又不是不�
     status_text = tkinter.StringVar(setting_window)
     status_label = tkinter.Label(setting_window, wraplength=390, textvariable=status_text)
     status_label.grid(column=0, columnspan=2, row=5)
+    about_label = tkinter.Label(setting_window, text='项目开源地址：https://github.com/heimoshuiyu/lottery-assistant')
+    about_label.grid(column=0, columnspan=2, row=6)
     setting_window.mainloop()
     is_setting_open = False
 
@@ -158,7 +160,7 @@ def save_setting():
     global status_text
     try:
         sleep_time = float(sleep_time_entry.get())
-        range_value = float(range_entry.get())
+        range_value = int(range_entry.get())
     except:
         status_text.set('输入的数据不合法，请检查（不要输入多余的空格或其它字符）')
         return
@@ -190,7 +192,7 @@ def main():  # 就是主函数和窗口排版，不想加注释了，好乱QAQ
     clickButton.grid(column = 0, row = 1, columnspan=3)
     tipsString = tkinter.StringVar()
     tipsLabel = tkinter.Label(frame, textvariable = tipsString)
-    tipsString.set('名单列表里共有%s个名字，没有重复'%len(namelist))
+    tipsString.set('抽签助手V1.5，名单列表里共有%s个名字'%len(namelist))
     tipsLabel.grid(column = 0, row = 2)
     qianzhi = tkinter.IntVar()
     check1 = tkinter.Checkbutton(frame, text = '无重复模式', variable=qianzhi)
@@ -253,7 +255,6 @@ def chouqian(): # 抽签主函数
             y += 1
         name.set(namelist[randnum])
         #tipsString.set('每人被抽到的理论概率为%s，实际概率为%s'%(round(1/len(namelist)*100,5), round((y/sum)*100,4)))
-        tipsString.set('抽签助手Ver1.4 内置数据库记录 打死都不会重复的版本')
         time.sleep(jsondata['sleep'])
     realchouqian() # 正常抽签后，执行一次真的抽签函数覆盖结果
     
