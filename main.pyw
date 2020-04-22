@@ -261,8 +261,15 @@ def chouqian(): # 抽签主函数
 
 def readnamelist(): # 读取名单，按行分割，返回列表
     namelist = list()
-    with open('名单.txt', 'r') as f:
+    with open('名单.txt', 'rb') as f:
         raw_str = f.read()
+    try:
+        raw_str = raw_str.decode('utf-8')
+    except:
+        try:
+            raw_str = raw_str.decode('gb2312')
+        except:
+            return ['名单.txt文件解码错误，请使用UTF-8或GB2312编码']
     raw_str = raw_str.replace('\r','')
     _namelist = raw_str.split('\n')
     for name in _namelist:
