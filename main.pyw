@@ -8,12 +8,14 @@ import json
 import hashlib
 
 
-now = False
-sleep = 0.01 # 抽签动画闪动时间间隔
+def main():
+    mainWindow = MainWindow()
+    mainWindow.mainloop()
 
 
 class Database:
-    def __init__(self, namelist):
+    def __init__(self, namelist, norepeat):
+        self.norepeat = norepeat
         md5 = hashlib.md5()  # 根据名单生成md5，打开对应的数据库
         md5data = json.dumps(namelist)
         md5.update(md5data.encode('utf-8'))
@@ -33,7 +35,7 @@ class Database:
         max = min + maxrange
         resultnamelist = self.getrangedict(min, max)
         randomindex = random.randint(0, len(resultnamelist) - 1)
-        if qianzhi.get() == 1:
+        if self.norepeat.get() == 1:
             self.count(resultnamelist[randomindex])
         return resultnamelist[randomindex]
 
@@ -98,179 +100,191 @@ class Counter:  # 键盘记录器类，先进先出方式记录键盘按键
             self.counter.append(False)
         return data
 
-is_setting_open = False
-def show_setting():  # 想弄个设置窗口，太麻烦算了 ###又不是不能用.jpg###
-    global setting_window, is_setting_open, sleep_time_entry, range_entry, status_text
-    if is_setting_open:
-        return
-    else:
-        is_setting_open = True
-    setting_window = tkinter.Tk()
-    sleep_time_label = tkinter.Label(setting_window, text='动画间隔时间（秒）：')
-    sleep_time_label.grid(column=0, row=0)
-    sleep_time_entry = tkinter.Entry(setting_window)
-    sleep_time_entry.insert(0, str(jsondata['sleep']))
-    sleep_time_entry.grid(column=1, row=0)
-    sleep_time_support_label = tkinter.Label(
-        setting_window,
-        text = '按下抽签按钮后，屏幕上名字闪动间隔的时间',
-        wraplength = 390,
-        justify = 'left'
-    )
-    sleep_time_support_label.grid(column=0, columnspan=2, row=1)
-    range_label = tkinter.Label(setting_window, text='重复许可范围：')
-    range_label.grid(column=0, row=2)
-    range_entry = tkinter.Entry(setting_window)
-    range_entry.insert(0, str(jsondata['range']))
-    range_entry.grid(column=1, row=2)
-    range_support_label = tkinter.Label(
-        setting_window,
-        text = '程序会统计名单中所有人被抽中的次数，次数最高和最低人不能超过这个范围，如果名单中有人统计次数过超出高出这个范围'
-        '则下一轮系统不会抽取此人。例如名单中有张三、李四、王五，重复许可范围设置为0，第一轮抽签抽到李四，李四的统计次数为1，'
-        '其他人为0，李四超出了重复许可范围，所以在下一轮抽签中李四不可能被抽中，直到张三、王五被抽到之后。',
-        wraplength = 390,
-        justify = 'left'
-    )
-    range_support_label.grid(column=0, columnspan=2, row=3)
-    save_buttom = tkinter.Button(setting_window, command=save_setting, text='保存')
-    save_buttom.grid(column=0, columnspan=2, row=4)
-    setting_window.protocol('WM_DELETE_WINDOW', exit_setting)  # 绑定自定义退出函数，确保只有一个setting_windows打开
-    status_text = tkinter.StringVar(setting_window)
-    status_label = tkinter.Label(setting_window, wraplength=390, textvariable=status_text)
-    status_label.grid(column=0, columnspan=2, row=5)
-    about_label = tkinter.Label(setting_window, text='项目开源地址：https://github.com/heimoshuiyu/lottery-assistant')
-    about_label.grid(column=0, columnspan=2, row=6)
-    setting_window.mainloop()
-    is_setting_open = False
 
-def exit_setting():
-    global is_setting_open, setting_window
-    is_setting_open = False
-    setting_window.destroy()
+class SettingWindow:
+    def __init__(self, parent):
+        self.parent = parent
+        self.setting_window = tkinter.Tk()
+        self.sleep_time_label = tkinter.Label(
+            self.setting_window, text='动画间隔时间（秒）：')
+        self.sleep_time_label.grid(column=0, row=0)
+        self.sleep_time_entry = tkinter.Entry(self.setting_window)
+        self.sleep_time_entry.insert(0, str(self.parent.jsondata['sleep']))
+        self.sleep_time_entry.grid(column=1, row=0)
+        self.sleep_time_support_label = tkinter.Label(
+            self.setting_window,
+            text='按下抽签按钮后，屏幕上名字闪动间隔的时间',
+            wraplength=390,
+            justify='left'
+        )
+        self.sleep_time_support_label.grid(column=0, columnspan=2, row=1)
+        self.range_label = tkinter.Label(self.setting_window, text='重复许可范围：')
+        self.range_label.grid(column=0, row=2)
+        self.range_entry = tkinter.Entry(self.setting_window)
+        self.range_entry.insert(0, str(self.parent.jsondata['range']))
+        self.range_entry.grid(column=1, row=2)
+        self.range_support_label = tkinter.Label(
+            self.setting_window,
+            text='程序会统计名单中所有人被抽中的次数，次数最高和最低人不能超过这个范围，如果名单中有人统计次数过超出高出这个范围'
+            '则下一轮系统不会抽取此人。例如名单中有张三、李四、王五，重复许可范围设置为0，第一轮抽签抽到李四，李四的统计次数为1，'
+            '其他人为0，李四超出了重复许可范围，所以在下一轮抽签中李四不可能被抽中，直到张三、王五被抽到之后。',
+            wraplength=390,
+            justify='left'
+        )
+        self.range_support_label.grid(column=0, columnspan=2, row=3)
+        self.save_buttom = tkinter.Button(
+            self.setting_window, command=self.save_setting, text='保存')
+        self.save_buttom.grid(column=0, columnspan=2, row=4)
+        # 绑定自定义退出函数，确保只有一个setting_window打开
+        self.setting_window.protocol('WM_DELETE_WINDOW', self.exit_setting)
+        self.status_text = tkinter.StringVar(self.setting_window)
+        self.status_label = tkinter.Label(
+            self.setting_window, wraplength=390, textvariable=self.status_text)
+        self.status_label.grid(column=0, columnspan=2, row=5)
+        self.about_label = tkinter.Label(
+            self.setting_window, text='项目开源地址：https://github.com/heimoshuiyu/lottery-assistant')
+        self.about_label.grid(column=0, columnspan=2, row=6)
+        self.setting_window.mainloop()
 
-def save_setting():
-    global status_text
-    try:
-        sleep_time = float(sleep_time_entry.get())
-        range_value = int(range_entry.get())
-    except:
-        status_text.set('输入的数据不合法，请检查（不要输入多余的空格或其它字符）')
-        return
-    jsondata['sleep'] = sleep_time
-    jsondata['range'] = range_value
-    raw_jsondata = json.dumps(jsondata)
-    with open('config.json', 'w') as f:
-        f.write(raw_jsondata)
-    status_text.set('设置保存成功')
+    def exit_setting(self):
+        self.parent.is_setting_open = False
+        self.setting_window.destroy()
 
-def main():  # 就是主函数和窗口排版，不想加注释了，好乱QAQ
-    global name, status, tipsString, jsondata, root, qianzhi, root
-    root = tkinter.Tk()
-    root.title('抽签助手')
-    #root.maxsize(600, 400)    #窗口大小
-    #root.minsize(300, 240)
-    #frame=tkinter.Frame(root,width=300,height=240,background='green')  #容器
-    frame = tkinter.Frame(root, width=300, height=240)
-    name = tkinter.StringVar()
-    nameLabel = tkinter.Label(frame,textvariable=name,width=10,height=4)
-    #nameLabel.config(font = 'Helvetica -78 bold')
-    nameLabel.config(font = '微软雅黑 -78 bold')
-    status = tkinter.StringVar()
-    clickButton = tkinter.Button(frame,textvariable=status,command=startorstop)
-    name.set('准备开始')
-    status.set('开始抽取')
-    frame.bind("<Any-KeyPress>",callBack)
-    nameLabel.grid(column = 0, row = 0, columnspan = 3)
-    clickButton.grid(column = 0, row = 1, columnspan=3)
-    tipsString = tkinter.StringVar()
-    tipsLabel = tkinter.Label(frame, textvariable = tipsString)
-    tipsString.set('抽签助手V1.5，名单列表里共有%s个名字'%len(namelist))
-    tipsLabel.grid(column = 0, row = 2)
-    qianzhi = tkinter.IntVar()
-    check1 = tkinter.Checkbutton(frame, text = '无重复模式', variable=qianzhi)
-    qianzhi.set(1)
-    setButton = tkinter.Button(frame, text = '设置', command=show_setting)
-    setButton.grid(column = 2, row = 2)
-    check1.grid(column = 1, row = 2)
-    frame.grid(column = 0, row = 0)
-    frame.focus_set()
-    root.mainloop()
-
-def readjson(): # 读取配置文件返回字典, jsondata是全局用的哦（逃
-    with open('config.json', 'rb') as f:
-        data = f.read().decode('utf-8')
-        jsondata = json.loads(data)
-        return jsondata
-
-def writejson(jsondata):  # 写配置文件
-    jsondata = str(jsondata)
-    with open('config.json', 'w') as f:
-        f.write(jsondata)
-
-def check_forever():
-    while True:
-        time.sleep(0.01)
-        print(qianzhi.get())
-
-def callBack(event):  # 键盘记录器关键函数
-    global counter
-    counter.putin(event.keysym)
-
-def startorstop():  # 绑定按钮用的函数，执行一次开始，再执行一次停止，靠now判断当前是否再运行
-    global now
-    if not now:  # 开始
-        now = True
-        status.set('点击停止')
-        threading.Thread(target = chouqian, args = ()).start()
-    else:
-        now = False
-        status.set('点击开始')
-
-def realchouqian():  # 真正的抽签函数，抽签动画停止后立即执行realchouqian，
-    global counter, database, qianzhi
-    if qianzhi.get() == 1:  # 判断无重复模式勾选框是否勾选
-        maxrange = jsondata['range']  # 从数据库中弄一个次数较少的名字粗来
-        resultname = database.get(maxrange)
-        name.set(resultname)  # 把抽到的名字秒变数据库中抽到的名字
-    num = counter.getout() # 从键盘记录器调取输入的编号
-    if num:
-        name.set(namelist[int(num)-1])  # 从键盘记录器读取序号，设置名字，达到作弊效果
-
-sum = 1
-y = 0
-def chouqian(): # 抽签主函数
-    global now, tipsString, namelist, sum, y, jsondata
-    while now:
-        randnum = random.randint(0,len(namelist)-1)
-        sum += 1
-        if randnum == 0:
-            y += 1
-        name.set(namelist[randnum])
-        #tipsString.set('每人被抽到的理论概率为%s，实际概率为%s'%(round(1/len(namelist)*100,5), round((y/sum)*100,4)))
-        time.sleep(jsondata['sleep'])
-    realchouqian() # 正常抽签后，执行一次真的抽签函数覆盖结果
-    
-
-def readnamelist(): # 读取名单，按行分割，返回列表
-    namelist = list()
-    with open('名单.txt', 'rb') as f:
-        raw_str = f.read()
-    try:
-        raw_str = raw_str.decode('utf-8')
-    except:
+    def save_setting(self):
         try:
-            raw_str = raw_str.decode('gb2312')
+            sleep_time = float(self.sleep_time_entry.get())
+            range_value = int(self.range_entry.get())
         except:
-            return ['名单.txt文件解码错误，请使用UTF-8或GB2312编码']
-    raw_str = raw_str.replace('\r','')
-    _namelist = raw_str.split('\n')
-    for name in _namelist:
-        if name:
-            namelist.append(name)
-    return namelist
+            self.status_text.set('输入的数据不合法，请检查（不要输入多余的空格或其它字符）')
+            return
+        self.parent.jsondata['sleep'] = sleep_time
+        self.parent.jsondata['range'] = range_value
+        raw_jsondata = json.dumps(self.parent.jsondata)
+        with open('config.json', 'w') as f:
+            f.write(raw_jsondata)
+        self.status_text.set('设置保存成功')
 
-namelist = readnamelist()
-database = Database(namelist)
-jsondata = readjson()
-counter = Counter(len(str(len(namelist))))
-main()  # 执行主函数
+
+class MainWindow():
+    def __init__(self):
+        # 根据 now 判断抽签是否正在运行
+        self.now = False
+
+        self.jsondata = {}
+        self.is_setting_open = False
+
+        self.readnamelist()
+        self.readjson()
+
+        # 根窗口
+        self.root = tkinter.Tk()
+        self.root.title('抽签助手')
+        # self.root.maxsize(600, 400)    #窗口大小
+        #self.root.minsize(300, 240)
+
+        # 容器
+        # self.frame=tkinter.Frame(self.root,width=300,height=240,background='green')
+        self.frame = tkinter.Frame(self.root, width=300, height=240)
+
+        # name 用来储存当前显示在屏幕上的姓名
+        self.name = tkinter.StringVar()
+        self.nameLabel = tkinter.Label(
+            self.frame, textvariable=self.name, width=10, height=4)
+        #self.nameLabel.config(font = 'Helvetica -78 bold')
+        self.nameLabel.config(font='微软雅黑 -78 bold')
+
+        self.status = tkinter.StringVar()  # 按钮上的文字：开始/停止
+        self.clickButton = tkinter.Button(
+            self.frame, textvariable=self.status, command=self.startorstop)
+        self.name.set('准备开始')
+        self.status.set('开始抽取')
+
+        # 绑定键盘记录器事件
+        self.frame.bind("<Any-KeyPress>", self.callBack)
+
+        # 布局
+        self.nameLabel.grid(column=0, row=0, columnspan=3)
+        self.clickButton.grid(column=0, row=1, columnspan=3)
+        self.tipsString = tkinter.StringVar()
+        self.tipsLabel = tkinter.Label(
+            self.frame, textvariable=self.tipsString)
+        self.tipsString.set('抽签助手V1.5，名单列表里共有%s个名字' % len(self.namelist))
+        self.tipsLabel.grid(column=0, row=2)
+
+        self.norepeat = tkinter.IntVar()  # 无重复模式判断变量
+        self.check1 = tkinter.Checkbutton(
+            self.frame, text='无重复模式', variable=self.norepeat)
+        self.norepeat.set(1)
+        self.setButton = tkinter.Button(
+            self.frame, text='设置', command=self.show_setting)
+        self.setButton.grid(column=2, row=2)
+        self.check1.grid(column=1, row=2)
+        self.frame.grid(column=0, row=0)
+        self.frame.focus_set()
+
+        self.database = Database(self.namelist, self.norepeat)
+        self.counter = Counter(len(str(len(self.namelist))))
+
+    def mainloop(self):
+        self.root.mainloop()
+
+    def show_setting(self):
+        if self.is_setting_open:
+            return
+        self.is_setting_open = True
+        self.settingWindow = SettingWindow(self)
+
+    def readjson(self):  # 读取配置文件
+        with open('config.json', 'rb') as f:
+            data = f.read().decode('utf-8')
+            self.jsondata = json.loads(data)
+
+    def callBack(self, event):  # 键盘记录器关键函数
+        self.counter.putin(event.keysym)
+
+    def startorstop(self):  # 绑定按钮用的函数，执行一次开始，再执行一次停止，靠 now 判断当前是否再运行
+        if not self.now:  # 开始
+            self.now = True
+            self.status.set('点击停止')
+            threading.Thread(target=self.chouqian, args=()).start()
+        else:
+            self.now = False
+            self.status.set('点击开始')
+
+    def realchouqian(self):  # 真正的抽签函数，抽签动画停止后立即执行 realchouqian，
+        if self.norepeat.get() == 1:  # 判断无重复模式勾选框是否勾选
+            maxrange = self.jsondata['range']  # 从数据库中弄一个次数较少的名字出来
+            resultname = self.database.get(maxrange)
+            self.name.set(resultname)  # 把抽到的名字秒变数据库中抽到的名字
+        num = self.counter.getout()  # 从键盘记录器调取输入的编号
+        if num:
+            self.name.set(self.namelist[int(num)-1])  # 从键盘记录器读取序号，设置名字，达到作弊效果
+
+    def chouqian(self):  # 抽签主函数
+        while self.now:
+            randnum = random.randint(0, len(self.namelist)-1)
+            self.name.set(self.namelist[randnum])
+            time.sleep(self.jsondata['sleep'])
+        self.realchouqian()  # 正常抽签后，执行一次真的抽签函数覆盖结果
+
+    def readnamelist(self):  # 读取名单，按行分割，返回列表
+        namelist = list()
+        with open('名单.txt', 'rb') as f:
+            raw_str = f.read()
+        try:
+            raw_str = raw_str.decode('utf-8')
+        except:
+            try:
+                raw_str = raw_str.decode('gb2312')
+            except:
+                raise ValueError('名单.txt文件解码错误，请使用UTF-8或GB2312编码')
+        raw_str = raw_str.replace('\r', '')
+        _namelist = raw_str.split('\n')
+        for name in _namelist:
+            if name:
+                namelist.append(name)
+        self.namelist = namelist
+
+
+if __name__ == '__main__':
+    main()
