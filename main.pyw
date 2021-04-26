@@ -63,7 +63,7 @@ class Database:
         for name in self.database:
             index = self.database[name]
             index = int(index)
-            if index >= min and index <= max:
+            if index >= min and index < max:
                 resultnamelist.append(name)
         print(resultnamelist)
         return resultnamelist
