@@ -1,11 +1,3 @@
-### 代码不规范
-### 没事就不要瞎看
-### 背景BGM功能还没完善
-### 也不打算完善
-### qwq
-
-
-
 import random
 import time
 import tkinter
@@ -84,24 +76,24 @@ class Database:
 class Counter:  # 键盘记录器类，先进先出方式记录键盘按键
     def __init__(self, num):
         self.counter = list()
-        for i in range(num):
+        for _ in range(num):
             self.counter.append(False)
 
     def putin(self, data):
-        tmp = self.counter.pop(0)
+        self.counter.pop(0)
         self.counter.append(data)
 
     def getout(self):
         for i in self.counter:
             if not i:
                 return False
-        for i in self.counter:
+        for _ in self.counter:
             try:
-                tmp = int(i)  # 返回键盘按下的数字，其他情况全部返回False
+                int(i)  # 返回键盘按下的数字，其他情况全部返回False
             except:
                 return False
         data = ''
-        for i in range(len(self.counter)):
+        for _ in range(len(self.counter)):
             data += self.counter.pop(0)
             self.counter.append(False)
         return data
