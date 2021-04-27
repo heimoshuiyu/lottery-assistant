@@ -208,7 +208,7 @@ class MainWindow():
         self.tipsString = tkinter.StringVar()
         self.tipsLabel = tkinter.Label(
             self.frame, textvariable=self.tipsString)
-        self.tipsString.set('抽签助手V1.5，名单列表里共有%s个名字' % len(self.namelist))
+        self.tipsString.set('抽签助手v2.0.0，名单列表里共有%s个名字' % len(self.namelist))
         self.tipsLabel.grid(column=0, row=2)
 
         self.norepeat = tkinter.IntVar()  # 无重复模式判断变量
